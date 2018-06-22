@@ -8,10 +8,11 @@ import java.awt.event.WindowEvent;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Vector;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -26,7 +27,7 @@ public class AlterTicketsWindow extends JFrame implements ActionListener {
     private JTable table;
     private DefaultTableModel tableModel;
     final DatePicker datepick;
-    private String userid,airlinecode,formertraveldate,startcity,arrivecity;
+    private String userid,airlinecode,formertraveldate,startcity,arrivecity,todaydate,limitdate;
     private int ticketsnum;
 
     DbConnect dbConnect = new DbConnect();
@@ -39,10 +40,10 @@ public class AlterTicketsWindow extends JFrame implements ActionListener {
     public AlterTicketsWindow(String userid,String traveldate,String airlinecode,int ticketsnum) {
 
         super("改签");
-        this.userid = userid;
-        this.formertraveldate = traveldate;
-        this.airlinecode = airlinecode;
-        this.ticketsnum = ticketsnum;
+        this.userid = userid; //用户账号名
+        this.formertraveldate = traveldate; //出行日期
+        this.airlinecode = airlinecode; //航班号
+        this.ticketsnum = ticketsnum; //购买数量
 
 
         setBounds(400, 200, 850, 600);
@@ -80,13 +81,13 @@ public class AlterTicketsWindow extends JFrame implements ActionListener {
             String sqlforcity = "SELECT * FROM AirlineDate WHERE AirlineCode = ?";
             PreparedStatement preparedStatementforcity = conn.prepareStatement(sqlforcity);
             preparedStatementforcity.setString(1, airlinecode);
-            System.out.println(airlinecode);
+            //System.out.println(airlinecode);
 
             ResultSet res = preparedStatementforcity.executeQuery();
             if(res.next()){
                 this.startcity = res.getString("startCity");
                 this.arrivecity = res.getString("lastCity");
-                System.out.println(startcity + "  " + arrivecity);
+                //System.out.println(startcity + "  " + arrivecity);
             }
             preparedStatementforcity.close();
 
@@ -122,13 +123,19 @@ public class AlterTicketsWindow extends JFrame implements ActionListener {
 
         //日期选择框
         JPanel datePanel = new JPanel();
-        //ticketsPanel.add(datePanel, BorderLayout.CENTER);
-
         datepick = getDatePicker();
         JLabel label_2 = new JLabel("日期：");
         choosePanel.add(label_2);
         datePanel.add(datepick,BorderLayout.CENTER);
         choosePanel.add(datePanel);
+        this.todaydate = datepick.getText();
+        try {
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+            Date date = format.parse(datepick.getText());
+            this.limitdate = getLimitdate(date);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 
         //查询按钮
         button = new JButton("查询");
@@ -168,9 +175,17 @@ public class AlterTicketsWindow extends JFrame implements ActionListener {
         setVisible(true);
     }
 
+    public String getLimitdate(Date date) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);//date 换成已经已知的Date对象
+        cal.add(Calendar.HOUR_OF_DAY, +168); // 七天后
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        return format.format(cal.getTime());
+    }
 
 
     public void actionPerformed(ActionEvent e) {
+
         if(e.getSource() == button){
 
             for (int index = tableModel.getRowCount() - 1; index >= 0; index--) {
@@ -178,76 +193,102 @@ public class AlterTicketsWindow extends JFrame implements ActionListener {
             }
             //清除表中原有的项。
             table.repaint();
-            try{
-                String sqlforplane = "SELECT * from AirlineDate WHERE startCity = ? AND lastCity = ?";
-                PreparedStatement preparedStatementforplane = conn.prepareStatement(sqlforplane);
-                preparedStatementforplane.setString(1, startcity);
-                preparedStatementforplane.setString(2, arrivecity);
-                ResultSet res_3 = preparedStatementforplane.executeQuery();
 
-                while(res_3.next()){
-                    String company = res_3.getString("Company");
-                    String airlinecode = res_3.getString("AirlineCode");
-                    String mode = res_3.getString("Mode");
-                    String startdrome = res_3.getString("StartDrome");
-                    String arrivedrome = res_3.getString("ArriveDrome");
-                    String starttime = res_3.getString("StartTime");
-                    String arrivetime = res_3.getString("ArriveTime");
-                    int price = res_3.getInt("AirlinePrice");
-                    int seats = 0;
-                    //查找该日期的航班剩余票数
-                    String sqlforseats = "SELECT * from SeatsRemain WHERE AirlineCode = ? AND Date = ?";
-                    PreparedStatement preparedStatementforseats = conn.prepareStatement(sqlforseats);
-                    preparedStatementforseats.setString(1, airlinecode);
-                    preparedStatementforseats.setString(2, datepick.getText());
-                    ResultSet res_4 = preparedStatementforseats.executeQuery();
-                    if(res_4.next()) {
-                        seats = res_4.getInt("Seats_Remain");
+
+            int p = todaydate.compareTo(datepick.getText());
+            int q = limitdate.compareTo(datepick.getText());
+            if (!(p <= 0 && q >= 0)) {
+                if (p > 0)
+                    JOptionPane.showMessageDialog(null, "日期无效，请重新选择！");
+                else if (q < 0)
+                    JOptionPane.showMessageDialog(null, "只能改签七天内的机票！");
+            }else {
+
+                try {
+                    String sqlforplane = "SELECT * from AirlineDate WHERE startCity = ? AND lastCity = ?";
+                    PreparedStatement preparedStatementforplane = conn.prepareStatement(sqlforplane);
+                    preparedStatementforplane.setString(1, startcity);
+                    preparedStatementforplane.setString(2, arrivecity);
+                    ResultSet res_3 = preparedStatementforplane.executeQuery();
+
+                    while (res_3.next()) {
+                        String company = res_3.getString("Company");
+                        String airlinecode = res_3.getString("AirlineCode");
+                        String mode = res_3.getString("Mode");
+                        String startdrome = res_3.getString("StartDrome");
+                        String arrivedrome = res_3.getString("ArriveDrome");
+                        String starttime = res_3.getString("StartTime");
+                        String arrivetime = res_3.getString("ArriveTime");
+                        int price = res_3.getInt("AirlinePrice");
+                        int seats = 0;
+                        //查找该日期的航班剩余票数
+                        String sqlforseats = "SELECT * from SeatsRemain WHERE AirlineCode = ? AND Date = ?";
+                        PreparedStatement preparedStatementforseats = conn.prepareStatement(sqlforseats);
+                        preparedStatementforseats.setString(1, airlinecode);
+                        preparedStatementforseats.setString(2, datepick.getText());
+                        ResultSet res_4 = preparedStatementforseats.executeQuery();
+                        if (res_4.next()) {
+                            seats = res_4.getInt("Seats_Remain");
+                        }
+                        preparedStatementforseats.close();
+
+                        //将该航班信息显示出来
+                        Vector vector = new Vector();
+                        vector.add(company);
+                        vector.add(airlinecode);
+                        vector.add(mode);
+                        vector.add(startdrome);
+                        vector.add(arrivedrome);
+                        vector.add(starttime);
+                        vector.add(arrivetime);
+                        vector.add(price);
+                        vector.add(seats);
+                        tableModel.addRow(vector);
                     }
-                    preparedStatementforseats.close();
+                    preparedStatementforplane.close();
 
-                    //将该航班信息显示出来
-                    Vector vector = new Vector();
-                    vector.add(company);
-                    vector.add(airlinecode);
-                    vector.add(mode);
-                    vector.add(startdrome);
-                    vector.add(arrivedrome);
-                    vector.add(starttime);
-                    vector.add(arrivetime);
-                    vector.add(price);
-                    vector.add(seats);
-                    tableModel.addRow(vector);
+                } catch (Exception ee) {
+                    ee.printStackTrace();
                 }
-                preparedStatementforplane.close();
-
-            }catch (Exception ee){
-                ee.printStackTrace();
             }
         }
         if(e.getSource() == confirmButton){
+
             if(table.getSelectedRow() != -1) {
                 String airlinecode = tableModel.getValueAt(table.getSelectedRow(), 1).toString();
-                int ticketsremain =  Integer.valueOf(tableModel.getValueAt(table.getSelectedRow(), 8).toString());
-                //System.out.println(ticketsremain);
                 String traveldate = datepick.getText();
-                String startcity = startTextField.getText();
-                String arrivecity = arrivelTextField.getText();
-                if(ticketsremain == 0)
-                    JOptionPane.showMessageDialog(null,"该航班已满仓，请选择别的航班！");
-                else {
-                    //实时更新显示的信息
-                    new OrderTicketsWindow(traveldate,formertraveldate, airlinecode, startcity, arrivecity, userid, ticketsremain,ticketsnum,0)
-                            .addWindowListener(new WindowAdapter() {
-                                @Override
-                                public void windowClosed(WindowEvent e) {
-                                    AlterTicketsWindow.super.dispose();
-                                }
-                            });;
+                if(airlinecode.equals(this.airlinecode)&&traveldate.equals(formertraveldate)){
+                    JOptionPane.showMessageDialog(null,"相同的航班，无需改签");
+                } else {
+                    int ticketsremain = Integer.valueOf(tableModel.getValueAt(table.getSelectedRow(), 8).toString());
+                    String startcity = startTextField.getText();
+                    String arrivecity = arrivelTextField.getText();
+                    if (ticketsremain == 0)
+                        JOptionPane.showMessageDialog(null, "该航班已满仓，请选择别的航班！");
+                    else {
+                        //实时更新显示的信息
+                        //System.out.println(this.airlinecode+"  "+airlinecode);
+                        //System.out.println(formertraveldate+"  "+traveldate);
+                        //System.out.println("剩余："+ticketsremain);
+                        new AlertTicketsConfirmWindow(traveldate, formertraveldate,this.airlinecode,airlinecode, startcity, arrivecity, userid, ticketsremain, ticketsnum)
+                                .addWindowListener(new WindowAdapter() {
+                                    @Override
+                                    public void windowClosed(WindowEvent e) {
+                                        AlterTicketsWindow.super.dispose();
+                                    }
+                                });
+                    }
                 }
             }
             else
                 JOptionPane.showMessageDialog(null,"请先选择航班再进行操作！");
+        }
+
+        if(e.getSource()==cancelButton){
+            int i = JOptionPane.showConfirmDialog(null,"是否取消本次改签？");
+            if(i == 0){
+                this.dispose();
+            }
         }
 
     }

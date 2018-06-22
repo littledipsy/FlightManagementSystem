@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 public class DbConnect
 {
     Connection conn;
+
     public Connection connect()
     {
         //驱动程序名

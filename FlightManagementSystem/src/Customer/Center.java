@@ -89,14 +89,12 @@ public class Center extends JFrame implements ActionListener {
         datePanel.add(datepick,BorderLayout.CENTER);
         choosePanel.add(datePanel);
         this.todaydate = datepick.getText();
-        System.out.println(todaydate);
         try {
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
             Date date = format.parse(datepick.getText());
-            this.limitdate = nextday(date);
-            System.out.println(limitdate);
+            this.limitdate = getLimitdate(date);
         }catch (Exception e){
-
+            e.printStackTrace();
         }
         //查询按钮
         button = new JButton("查询");
@@ -110,7 +108,7 @@ public class Center extends JFrame implements ActionListener {
         table = new JTable();
         tableModel = (DefaultTableModel) table.getModel();
         tableModel.addColumn("航空公司");
-        tableModel.addColumn("航线编号");
+        tableModel.addColumn("航班编号");
         tableModel.addColumn("飞机型号");
         tableModel.addColumn("起飞机场");
         tableModel.addColumn("降落机场");
@@ -246,7 +244,7 @@ public class Center extends JFrame implements ActionListener {
         tableModel_1 = (DefaultTableModel) table_1.getModel();
         tableModel_1.addColumn("出行日期");
         tableModel_1.addColumn("航空公司");
-        tableModel_1.addColumn("航线编号");
+        tableModel_1.addColumn("航班编号");
         tableModel_1.addColumn("飞机型号");
         tableModel_1.addColumn("起飞机场");
         tableModel_1.addColumn("降落机场");
@@ -294,7 +292,7 @@ public class Center extends JFrame implements ActionListener {
     }
 
     //返回距离近今天七天后的日期
-    public String nextday(Date date) {
+    public String getLimitdate(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);//date 换成已经已知的Date对象
         cal.add(Calendar.HOUR_OF_DAY, +168); // 七天后
@@ -477,7 +475,6 @@ public class Center extends JFrame implements ActionListener {
                 findinterchangeairline(start,arrive);
             }
 
-
         }catch (Exception ee){
             ee.printStackTrace();
         }
@@ -585,8 +582,8 @@ public class Center extends JFrame implements ActionListener {
 
     }
 
-
     public void actionPerformed(ActionEvent e){
+
         //交换出发城市和到达城市
         if(e.getSource() == exchangeButton) {
             String startcity = startTextField.getText().toString();
@@ -604,7 +601,6 @@ public class Center extends JFrame implements ActionListener {
             if(!startcity.equals("")&&!arrivecity.equals("")) {
                 int p = todaydate.compareTo(datepick.getText());
                 int q = limitdate.compareTo(datepick.getText());
-                System.out.println(p+" "+q);
                 if (p <= 0 && q >= 0)
                     showsearchresult();
                 else {
@@ -624,7 +620,6 @@ public class Center extends JFrame implements ActionListener {
             }
         }
 
-
         //订票
         if(e.getSource() == confirmButton){
 
@@ -639,7 +634,7 @@ public class Center extends JFrame implements ActionListener {
                     JOptionPane.showMessageDialog(null,"该航班已满仓，请选择别的航班！");
                 else {
                     //实时更新显示的信息
-                    new OrderTicketsWindow(traveldate,traveldate, airlinecode, startcity, arrivecity, userid, ticketsremain,0,1)
+                    new OrderTicketsWindow(traveldate, airlinecode, startcity, arrivecity, userid, ticketsremain)
                             .addWindowListener(new WindowAdapter() {
                                 @Override
                                 public void windowClosed(WindowEvent e) {
@@ -655,7 +650,12 @@ public class Center extends JFrame implements ActionListener {
 
         //修改个人信息
         if(e.getSource() == button_1){
-            new RevisePersonalInformation(userid);
+            new RevisePersonalInformation(userid).addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    showpersonalinformation();
+                }
+            });
         }
 
         //修改登录密码
@@ -675,8 +675,6 @@ public class Center extends JFrame implements ActionListener {
                 String airlinecode = tableModel_1.getValueAt(table_1.getSelectedRow(), 2).toString();
                 int ticketsnum =  Integer.valueOf(tableModel_1.getValueAt(table_1.getSelectedRow(), 9).toString());
                 String traveldate = tableModel_1.getValueAt(table_1.getSelectedRow(), 0).toString();
-                String startdrome = tableModel_1.getValueAt(table_1.getSelectedRow(), 4).toString();
-                String arrivedrome = tableModel_1.getValueAt(table_1.getSelectedRow(), 5).toString();
 
                 new AlterTicketsWindow(userid,traveldate,airlinecode,ticketsnum).addWindowListener(new WindowAdapter() {
                     @Override

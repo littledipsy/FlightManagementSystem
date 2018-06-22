@@ -56,12 +56,12 @@ public class Login extends JFrame implements ActionListener {
         passwardField = new JPasswordField();
         passwardField.setColumns(10);
 
-        loginbutton = new JButton("登陆");
+        loginbutton = new JButton("登录");
         registerbutton = new JButton("注册");
         loginbutton.addActionListener(this);
         registerbutton.addActionListener(this);
 
-        JLabel lblNewLabel = new JLabel("欢迎登陆航班管理系统");
+        JLabel lblNewLabel = new JLabel("欢迎登录航班管理系统");
         lblNewLabel.setFont(new Font("Lucida Grande", Font.BOLD, 25));
 
         GroupLayout gl_contentPane = new GroupLayout(contentPane);

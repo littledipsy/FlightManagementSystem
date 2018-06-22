@@ -89,7 +89,7 @@ public class ManagementWindow extends JFrame implements ActionListener {
         table = new JTable();
         tableModel = (DefaultTableModel) table.getModel();
         tableModel.addColumn("航空公司");
-        tableModel.addColumn("航线编号");
+        tableModel.addColumn("航班编号");
         tableModel.addColumn("飞机型号");
         tableModel.addColumn("起飞机场");
         tableModel.addColumn("降落机场");

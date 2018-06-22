@@ -119,21 +119,29 @@ public class RevisePasswordWindow extends JFrame implements ActionListener {
                 if(res.next()){
                     String password = res.getString("User_Password");
                     System.out.println("原密码："+password);
+
                     if(formerpassword.equals(password)){
+
                         if(newpassword_1.equals(newpassword_2)){
-                            String sqlforrevise = "UPDATE UserInformation SET User_Password = ?  WHERE User_ID = ?";
 
-                            PreparedStatement preparedStatement = conn.prepareStatement(sqlforrevise);
-                            preparedStatement.setString(1, newpassword_1);
-                            preparedStatement.setString(2, userid);
+                            if(formerpassword.equals(newpassword_1)){
+                                JOptionPane.showMessageDialog(null,"原密码与新密码一样，请重试！");
+                            }
+                            else {
+                                String sqlforrevise = "UPDATE UserInformation SET User_Password = ?  WHERE User_ID = ?";
 
-                            preparedStatement.execute();
-                            preparedStatementforid.close();
-                            preparedStatement.close();
-                            conn.close();
+                                PreparedStatement preparedStatement = conn.prepareStatement(sqlforrevise);
+                                preparedStatement.setString(1, newpassword_1);
+                                preparedStatement.setString(2, userid);
 
-                            JOptionPane.showMessageDialog(null,"修改成功，请重新登录！");
-                            this.dispose();
+                                preparedStatement.execute();
+                                preparedStatementforid.close();
+                                preparedStatement.close();
+                                conn.close();
+
+                                JOptionPane.showMessageDialog(null, "修改成功，请重新登录！");
+                                this.dispose();
+                            }
                         }
                         else
                             JOptionPane.showMessageDialog(null,"密码不匹配，请重试！");
